@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum role {
+  ADMIN
+  USER
+}
+
+enum OrderStatus {
+  PENDING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILURE
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  name        String    
+  email       String    @unique
+  password    String 
+  refreshToken String?
+  role        role      @default(USER)
+  orders      Order[]
+  cartItems   Cart[]
+  address     UserAddress[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+}
+
+model UserAddress {
+  id        Int @id @default(autoincrement())
+  userId    Int
+  user      User @relation(fields: [userId], references: [id])
+
+  mobileNumber String
+  addressLine  String
+  city         String
+  state        String
+  postalCode   String
+  country      String
+}
+
+model Seller {
+  id          Int       @id @default(autoincrement())
+  name        String
+  email       String    @unique
+  products    Product[]
+
+  @@unique([name])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  name        String    
+  description String    @db.Text
+  price       Decimal   @db.Decimal(10, 2)
+  sellerId    Int
+  seller      Seller    @relation(fields: [sellerId], references: [id])
+  variant     ProductVariant[]
+  category    ProductCategory[]
+
+
+  @@index([sellerId])
+  @@index([ name, price])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ProductVariant {
+  id          Int       @id @default(autoincrement())
+  stock       Int       @default(0)
+  color       String
+  size        String
+  image       String
+  productId   Int
+  product     Product   @relation(fields: [productId], references: [id])
+  cart        Cart[]
+  orderedItems  OrderedItems[]
+
+  @@unique([productId, color, size])
+  @@index([productId])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  products    ProductCategory[]
+}
+
+model ProductCategory {
+  id          Int       @id @default(autoincrement())
+  productId   Int
+  product     Product   @relation(fields: [productId], references: [id])
+  categoryId  Int
+  category    Category  @relation(fields: [categoryId], references: [id])
+
+  @@unique([productId, categoryId])
+}
+
+model Cart {
+  id          Int       @id @default(autoincrement())
+  quantity    Int       @default(1)
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  productVariantId  Int
+  productVariant    ProductVariant  @relation(fields: [productVariantId], references: [id])
+
+  @@unique([userId, productVariantId])
+  @@index([userId])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Order {
+  id          Int       @id @default(autoincrement())
+  totalAmount Decimal  @db.Decimal(10, 2)
+  status      OrderStatus @default(PENDING)
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  address     OrderAddress?
+  orderedItems OrderedItems[]
+  payment     Payment[]
+
+  @@index([userId, createdAt])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model OrderAddress {
+  id        Int @id @default(autoincrement())
+  orderId   Int     @unique
+  order     Order @relation(fields: [orderId], references: [id])
+  mobileNumber String
+  addressLine  String
+  city         String
+  state        String
+  postalCode   String
+  country      String
+}
+
+model OrderedItems {
+  id          Int       @id @default(autoincrement())
+  quantity    Int       @default(1)
+  priceAtPurchase Decimal @db.Decimal(10, 2)
+  orderId     Int
+  order       Order     @relation(fields: [orderId], references: [id])
+  productVariantId  Int
+  productVariant    ProductVariant  @relation(fields: [productVariantId], references: [id])
+
+  @@index([orderId, productVariantId])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Payment {
+  id          Int       @id @default(autoincrement())
+  status      PaymentStatus @default(PENDING)
+  method      String
+  amount      Decimal   @db.Decimal(10,2)
+  orderId Int
+  attempt Int @default(1)
+  transactionId String?
+  order       Order     @relation(fields: [orderId], references: [id])
+
+  @@unique([orderId, attempt])
+  @@index([createdAt])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
