@@ -1,7 +1,14 @@
-// "use server"
+// import prisma from "@/lib/db";
 
-// import { getTokenFromCookie } from "@/app/modules/auth/auth.service";
-
-// export async function GET() {
-//     return getTokenFromCookie()
+// export async function GET(){
+//     try {
+//         const users = await prisma.user.findMany({
+//             orderBy : {
+//                 id : 'asc'
+//             }
+//         })
+//         console.log(users)
+//     } catch (error) {
+//         console.log(error)
+//     }
 // }

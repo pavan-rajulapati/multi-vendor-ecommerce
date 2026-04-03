@@ -7,8 +7,8 @@ datasource db {
   provider = "postgresql"
 }
 
-enum role {
-  ADMIN
+enum Role {
+  VENDOR
   USER
 }
 
@@ -26,26 +26,35 @@ enum PaymentStatus {
   FAILURE
 }
 
-model User {
-  id          Int       @id @default(autoincrement())
-  name        String    
-  email       String    @unique
-  password    String 
-  refreshToken String?
-  role        role      @default(USER)
-  orders      Order[]
-  cartItems   Cart[]
-  address     UserAddress[]
+enum PaymentMethod {
+  CARD
+  UPI
+  NETBANKING
+}
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+model User {
+  id           String            @id @default(uuid())
+  name         String
+  email        String            @unique
+  password     String
+  refreshToken String?
+  role         Role              @default(USER)
+  orders       Order[]
+  cartItems    Cart[]
+  address      UserAddress[]
+  bankDetails  UserBankDetails[]
+  reviews      ProductReviews[]
+  seller       Seller?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
 model UserAddress {
-  id        Int @id @default(autoincrement())
-  userId    Int
-  user      User @relation(fields: [userId], references: [id])
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
   mobileNumber String
   addressLine  String
@@ -53,143 +62,203 @@ model UserAddress {
   state        String
   postalCode   String
   country      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserBankDetails {
+  id            String @id @default(uuid())
+  holderName    String
+  accountNumber String
+  ifscCode      String
+  userId        String
+  user          User   @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Seller {
-  id          Int       @id @default(autoincrement())
-  name        String
-  email       String    @unique
-  products    Product[]
+  id           String         @id @default(uuid())
+  name         String
+  mobileNumber String
+  isActive     Boolean        @default(true)
+  isVerified   Boolean        @default(false)
+  products     Product[]
+  details      SellerDetails?
 
-  @@unique([name])
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SellerDetails {
+  id           String @id @default(uuid())
+  businessName String @unique
+  storeName    String @unique
+  GSTIN        String @unique
+  PAN          String @unique
+  sellerId     String @unique
+  seller       Seller @relation(fields: [sellerId], references: [id])
+
+  @@index([sellerId])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Product {
-  id          Int       @id @default(autoincrement())
-  name        String    
-  description String    @db.Text
-  price       Decimal   @db.Decimal(10, 2)
-  sellerId    Int
-  seller      Seller    @relation(fields: [sellerId], references: [id])
+  id          String           @id @default(uuid())
+  name        String
+  description String           @db.Text
+  isActive    Boolean          @default(true)
+  sellerId    String
+  seller      Seller           @relation(fields: [sellerId], references: [id])
   variant     ProductVariant[]
-  category    ProductCategory[]
-
 
   @@index([sellerId])
-  @@index([ name, price])
+  @@index([name, createdAt])
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ProductVariant {
-  id          Int       @id @default(autoincrement())
-  stock       Int       @default(0)
-  color       String
-  size        String
-  image       String
-  productId   Int
-  product     Product   @relation(fields: [productId], references: [id])
-  cart        Cart[]
-  orderedItems  OrderedItems[]
+  id           String            @id @default(uuid())
+  stock        Int               @default(0)
+  price        Decimal           @db.Decimal(10, 2)
+  color        String
+  size         String
+  image        String
+  productId    String
+  product      Product           @relation(fields: [productId], references: [id])
+  category     ProductCategory[]
+  cart         Cart[]
+  orderedItems OrderedItems[]
+  reviews      ProductReviews[]
 
   @@unique([productId, color, size])
-  @@index([productId])
+  @@index([price])
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Category {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  products    ProductCategory[]
+  id              String            @id @default(uuid())
+  name            String            @unique
+  productCategory ProductCategory[]
 }
 
 model ProductCategory {
-  id          Int       @id @default(autoincrement())
-  productId   Int
-  product     Product   @relation(fields: [productId], references: [id])
-  categoryId  Int
-  category    Category  @relation(fields: [categoryId], references: [id])
+  id               String         @id @default(uuid())
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+  categoryId       String
+  category         Category       @relation(fields: [categoryId], references: [id])
 
-  @@unique([productId, categoryId])
+  @@unique([productVariantId, categoryId])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductReviews {
+  id               String         @id @default(uuid())
+  review           String
+  rating           Int
+  userId           String
+  user             User           @relation(fields: [userId], references: [id])
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+
+  @@unique([userId, productVariantId])
+  @@index([rating, createdAt])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Cart {
-  id          Int       @id @default(autoincrement())
-  quantity    Int       @default(1)
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
-  productVariantId  Int
-  productVariant    ProductVariant  @relation(fields: [productVariantId], references: [id])
+  id               String         @id @default(uuid())
+  quantity         Int            @default(1)
+  userId           String
+  user             User           @relation(fields: [userId], references: [id])
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
 
   @@unique([userId, productVariantId])
   @@index([userId])
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Order {
-  id          Int       @id @default(autoincrement())
-  totalAmount Decimal  @db.Decimal(10, 2)
-  status      OrderStatus @default(PENDING)
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
-  address     OrderAddress?
+  id           String         @id @default(uuid())
+  totalAmount  Decimal        @db.Decimal(10, 2)
+  status       OrderStatus    @default(PENDING)
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
   orderedItems OrderedItems[]
-  payment     Payment[]
+  payment      Payment[]
+  address      OrderAddress?
 
-  @@index([userId, createdAt])
+  @@index([userId])
+  @@index([createdAt, status])
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderedItems {
+  id               String         @id @default(uuid())
+  quantity         Int            @default(1)
+  priceAtPurchase  Decimal        @db.Decimal(10, 2)
+  orderId          String
+  order            Order          @relation(fields: [orderId], references: [id])
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+
+  @@index([orderId, productVariantId])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model OrderAddress {
-  id        Int @id @default(autoincrement())
-  orderId   Int     @unique
-  order     Order @relation(fields: [orderId], references: [id])
+  id           String @id @default(uuid())
+  orderId      String @unique
+  order        Order  @relation(fields: [orderId], references: [id])
   mobileNumber String
   addressLine  String
   city         String
   state        String
   postalCode   String
   country      String
-}
 
-model OrderedItems {
-  id          Int       @id @default(autoincrement())
-  quantity    Int       @default(1)
-  priceAtPurchase Decimal @db.Decimal(10, 2)
-  orderId     Int
-  order       Order     @relation(fields: [orderId], references: [id])
-  productVariantId  Int
-  productVariant    ProductVariant  @relation(fields: [productVariantId], references: [id])
-
-  @@index([orderId, productVariantId])
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Payment {
-  id          Int       @id @default(autoincrement())
-  status      PaymentStatus @default(PENDING)
-  method      String
-  amount      Decimal   @db.Decimal(10,2)
-  orderId Int
-  attempt Int @default(1)
-  transactionId String?
-  order       Order     @relation(fields: [orderId], references: [id])
+  id            String        @id @default(uuid())
+  status        PaymentStatus @default(PENDING)
+  method        PaymentMethod
+  amount        Decimal       @db.Decimal(10, 2)
+  attempt       Int           @default(1)
+  transactionId String?       @unique
+  orderId       String
+  order         Order         @relation(fields: [orderId], references: [id])
 
   @@unique([orderId, attempt])
-  @@index([createdAt])
+  @@index([createdAt, status])
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
