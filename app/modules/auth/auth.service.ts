@@ -1,10 +1,9 @@
 import { CreateUser, IsUserExist, UpdateRefreshToken } from "./auth.repository";
 import bcrypt from "bcryptjs"
 import { SigninDTO, SignupDTO } from "./auth.validation";
-import { AppError } from "@/lib/app-error";
+import { AppError } from "@/lib/error/app-error";
 import { GenerateAccessToken, GenerateRefreshToken } from "./auth.lib";
 import { HashToken } from "@/lib/hash-token";
-import { cookies } from "next/headers";
 
 export async function SignupService(body: SignupDTO) {
     const { name, email, password } = body;
@@ -12,7 +11,7 @@ export async function SignupService(body: SignupDTO) {
     const user = await IsUserExist(email)
 
     if (user) {
-        throw new AppError("Email is already registered", 409)
+        throw new AppError("User already exist", 409, "USER_ALREADY_EXIST")
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
@@ -41,13 +40,13 @@ export async function SigninService(body: SigninDTO) {
     const user = await IsUserExist(email)
 
     if (!user) {
-        throw new AppError("User Does'nt Exist", 401)
+        throw new AppError("User not found", 404, "USER_NOT_FOUND")
     }
 
     const verifyPassword = await bcrypt.compare(password, user.password)
 
     if (!verifyPassword) {
-        throw new AppError("Invalid Password", 401)
+        throw new AppError("Incorrect password", 401, "PASSWORD_MISMATCH")
     }
 
     const accessToken = GenerateAccessToken(user.id, user.role)

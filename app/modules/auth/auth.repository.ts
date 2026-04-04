@@ -19,7 +19,7 @@ export async function CreateUser(data : SignupDTO) {
     })
 }
 
-export async function UpdateRefreshToken(userId : number, token : string){
+export async function UpdateRefreshToken(userId : string, token : string){
     return prisma.user.update({
         where : {
             id : userId
@@ -30,7 +30,7 @@ export async function UpdateRefreshToken(userId : number, token : string){
     })
 }
 
-export async function FindUserById(userId : number) {
+export async function FindUserById(userId : string) {
     return prisma.user.findUnique({
         where : {
             id : userId
