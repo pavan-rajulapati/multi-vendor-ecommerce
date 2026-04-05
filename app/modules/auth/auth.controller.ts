@@ -1,11 +1,11 @@
 import { SigninService, SignupService } from "./auth.service";
 import { SigninValidation, SignupValidation } from "./auth.validation";
-import { DeleteToken, SetToken } from "@/lib/token";
+import { DeleteToken, SetToken } from "@/lib/auth/token";
 import { ApiResponse } from "@/lib/response";
 import { cookies } from "next/headers";
 import { GenerateAccessToken, GenerateRefreshToken, VerifyRefreshToken } from "./auth.lib";
 import { FindUserById, UpdateRefreshToken } from "./auth.repository";
-import { HashToken } from "@/lib/hash-token";
+import { HashToken } from "@/lib/auth/hash-token";
 import { RouteHandler } from "@/utils/route-handler";
 import { AppError } from "@/lib/error/app-error";
 
