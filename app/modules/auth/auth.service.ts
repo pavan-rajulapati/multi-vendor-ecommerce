@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs"
 import { SigninDTO, SignupDTO } from "./auth.validation";
 import { AppError } from "@/lib/error/app-error";
 import { GenerateAccessToken, GenerateRefreshToken } from "./auth.lib";
-import { HashToken } from "@/lib/hash-token";
+import { HashToken } from "@/lib/auth/hash-token";
 
 export async function SignupService(body: SignupDTO) {
     const { name, email, password } = body;
