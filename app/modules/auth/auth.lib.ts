@@ -17,9 +17,9 @@ export function GenerateRefreshToken (userId : string, role : string) {
 }
 
 export function VerifyAccessToken (token : string) {
-    return jwt.verify(token, process.env.SECRET_KEY!)
+    return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!)
 }
 
 export function VerifyRefreshToken (token : string) {
-    return jwt.verify(token, process.env.SECRET_KEY!)
+    return jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!)
 }

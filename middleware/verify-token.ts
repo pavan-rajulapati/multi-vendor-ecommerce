@@ -10,8 +10,8 @@ export async function GetAuthenticatedUser() {
     }
 
     try {
-        return VerifyAccessToken(accessToken) as { userId: number; role: string };
-    } catch (error : any) {
-        throw new AppError(error.message, 401, "INVALID_TOKEN");
+        return VerifyAccessToken(accessToken) as { userId: string; role: string };
+    } catch (error) {
+        throw new AppError("Invalid token", 403, "INVALID_TOKEN")
     }
 }

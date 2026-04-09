@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import { GenerateAccessToken, GenerateRefreshToken, VerifyRefreshToken } from "./auth.lib";
 import { FindUserById, UpdateRefreshToken } from "./auth.repository";
 import { HashToken } from "@/lib/auth/hash-token";
-import { RouteHandler } from "@/utils/route-handler";
+import { RouteHandler } from "@/app/common/utils/route-handler";
 import { AppError } from "@/lib/error/app-error";
 
 export const SignupController = RouteHandler(async (req) => {
@@ -64,7 +64,7 @@ export const RefreshTokenController = RouteHandler(async () => {
     return ApiResponse.success({ newAccessToken }, "Token refreshed", 200)
 })
 
-export const LogoutController = (async () => {
-    DeleteToken()
+export const LogoutController = RouteHandler(async () => {
+    await DeleteToken()
     return ApiResponse.success(null, "Logged out");
 })
