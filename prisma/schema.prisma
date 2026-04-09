@@ -57,7 +57,7 @@ model UserAddress {
   user   User   @relation(fields: [userId], references: [id])
 
   mobileNumber String
-  addressLine  String
+  addressLine  String  // House No, NearBy, area, village
   city         String
   state        String
   postalCode   String
