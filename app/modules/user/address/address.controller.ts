@@ -1,5 +1,5 @@
 import { RouteHandler } from "@/app/common/utils/route-handler";
-import { CreateAddressSchema } from "./address.validation";
+import { CreateAddressSchema, UpdateAddressInputSchema } from "./address.validation";
 import * as address from "./address.service";
 import { ApiResponse } from "@/lib/response";
 
@@ -18,4 +18,21 @@ export const FetchAddressController = RouteHandler(async () => {
 
     return ApiResponse.success(result, "Fetched successfully", 200)
     
+})
+
+export const UpdateAddressController = RouteHandler(async (req) => {
+    const body = await req.json()
+
+    const validateData = UpdateAddressInputSchema.parse(body)
+    const result = await address.Update(validateData)
+
+    return ApiResponse.success(result, "Address Updated Successfully", 200)
+})
+
+export const DeleteAddressController = RouteHandler(async (req) => {
+    const {id} = await req.json()
+
+    await address.Delete(id)
+
+    return ApiResponse.success("Address Deleted Successfully")
 })
