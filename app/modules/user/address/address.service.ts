@@ -1,12 +1,12 @@
 import { GetAuthenticatedUser } from "@/middleware/verify-token";
-import { AddressResponseSchema, CreateAddressInput } from "./address.validation";
+import { AddressResponseSchema, CreateAddressInput, UpdateUserInput } from "./address.validation";
 import { AppError } from "@/lib/error/app-error";
-import { CreateUserAddress, FetchUserAddress } from "./address.repository";
+import { CreateUserAddress, DeleteUserAddress, FetchUserAddress, isAnyActiveOrders, UpdateUserAddress } from "./address.repository";
 
-export async function Create(body : CreateAddressInput) {
+export async function Create(body: CreateAddressInput) {
     const user = await GetAuthenticatedUser()
 
-    if(!user) {
+    if (!user) {
         throw new AppError("Unauthorized aceess", 401, "UNAUTHORIZED_ACCESS")
     }
 
@@ -35,4 +35,46 @@ export async function Fetch() {
     }
 
     return filterData;
+}
+
+export async function Update(body: UpdateUserInput) {
+    const user = await GetAuthenticatedUser()
+
+    if (!user) {
+        throw new AppError("Unauthorized aceess", 401, "UNAUTHORIZED_ACCESS")
+    }
+
+    const activeOrders = await isAnyActiveOrders(user.userId)
+
+    if (activeOrders) {
+        throw new AppError(
+            "Cannot delete address while you have an active order.",
+            400,
+            "ACTIVE_ORDER_EXISTS"
+        );
+    }
+
+    const userAddress = await UpdateUserAddress(body)
+
+    return userAddress
+}
+
+export async function Delete(addressId: string) {
+    const user = await GetAuthenticatedUser()
+
+    if (!user) {
+        throw new AppError("Unauthorized aceess", 401, "UNAUTHORIZED_ACCESS")
+    }
+
+    const activeOrders = await isAnyActiveOrders(user.userId)
+
+    if (activeOrders) {
+        throw new AppError(
+            "Cannot delete address while you have an active order.",
+            400,
+            "ACTIVE_ORDER_EXISTS"
+        );
+    }
+
+    await DeleteUserAddress(addressId)
 }

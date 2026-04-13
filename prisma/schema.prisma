@@ -56,6 +56,8 @@ model UserAddress {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
+  firstName    String 
+  lastName     String 
   mobileNumber String
   addressLine  String  // House No, NearBy, area, village
   city         String
@@ -235,6 +237,9 @@ model OrderAddress {
   id           String @id @default(uuid())
   orderId      String @unique
   order        Order  @relation(fields: [orderId], references: [id])
+
+  firstName    String 
+  lastName     String 
   mobileNumber String
   addressLine  String
   city         String
