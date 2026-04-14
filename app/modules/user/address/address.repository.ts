@@ -1,7 +1,7 @@
 import prisma from "@/lib/db";
-import { CreateAddressInput, UpdateUserInput } from "./address.validation";
+import { AddressInputDTO, UpdateAddressInputDTO } from "./address.validation";
 
-export async function CreateUserAddress(userId: string, data: CreateAddressInput) {
+export async function CreateUserAddress(userId: string, data: AddressInputDTO) {
     return prisma.userAddress.create({
         data: {
             userId: userId,
@@ -11,12 +11,15 @@ export async function CreateUserAddress(userId: string, data: CreateAddressInput
 }
 
 export async function FetchUserAddress(userId: string) {
-    return prisma.userAddress.findFirst({
+    return prisma.userAddress.findMany({
         where: {
-            userId: userId
+            userId
         },
         select: {
             id: true,
+            firstName : true,
+            lastName : true,
+            label : true,
             mobileNumber: true,
             addressLine: true,
             city: true,
@@ -27,19 +30,42 @@ export async function FetchUserAddress(userId: string) {
     })
 }
 
-export async function UpdateUserAddress(data : UpdateUserInput) {
+export async function FetchUserAddressById(id : string, userId: string) {
+    return prisma.userAddress.findFirst({
+        where: {
+            id,
+            userId
+        },
+        select: {
+            id: true,
+            firstName : true,
+            lastName : true,
+            label : true,
+            mobileNumber: true,
+            addressLine: true,
+            city: true,
+            state: true,
+            postalCode: true,
+            country: true
+        }
+    })
+}
+
+export async function UpdateUserAddress(id : string, userId : string, data : UpdateAddressInputDTO) {
     return prisma.userAddress.update({
         where: {
-            id : data.id
+            id,
+            userId
         },
         data : data
     })
 }
 
-export async function DeleteUserAddress(addressId : string) {
+export async function DeleteUserAddress(id : string, userId : string) {
     return prisma.userAddress.deleteMany({
         where : {
-            id : addressId,
+            id,
+            userId
         }
     })
 }

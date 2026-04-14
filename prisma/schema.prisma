@@ -12,6 +12,13 @@ enum Role {
   USER
 }
 
+enum AddressLabel {
+  HOME
+  WORK
+  FRIEND
+  OTHER
+}
+
 enum OrderStatus {
   PENDING
   SHIPPED
@@ -57,7 +64,8 @@ model UserAddress {
   user   User   @relation(fields: [userId], references: [id])
 
   firstName    String 
-  lastName     String 
+  lastName     String
+  label        AddressLabel   @default(HOME)
   mobileNumber String
   addressLine  String  // House No, NearBy, area, village
   city         String
@@ -240,6 +248,7 @@ model OrderAddress {
 
   firstName    String 
   lastName     String 
+  label        AddressLabel   @default(HOME)
   mobileNumber String
   addressLine  String
   city         String
