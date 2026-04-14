@@ -1,14 +1,10 @@
 import { GetAuthenticatedUser } from "@/middleware/verify-token";
-import { AddressResponseSchema, CreateAddressInput, UpdateUserInput } from "./address.validation";
+import { AddressInputDTO, AddressListResponseSchema, AddressResponseSchema, UpdateAddressInputDTO } from "./address.validation";
 import { AppError } from "@/lib/error/app-error";
-import { CreateUserAddress, DeleteUserAddress, FetchUserAddress, isAnyActiveOrders, UpdateUserAddress } from "./address.repository";
+import { CreateUserAddress, DeleteUserAddress, FetchUserAddress, FetchUserAddressById, isAnyActiveOrders, UpdateUserAddress } from "./address.repository";
 
-export async function Create(body: CreateAddressInput) {
+export async function Create(body: AddressInputDTO) {
     const user = await GetAuthenticatedUser()
-
-    if (!user) {
-        throw new AppError("Unauthorized aceess", 401, "UNAUTHORIZED_ACCESS")
-    }
 
     const userAddress = await CreateUserAddress(
         user.userId,
@@ -24,47 +20,53 @@ export async function Fetch() {
 
     const rawAddress = await FetchUserAddress(user.userId);
 
-    if (!rawAddress) {
-        throw new AppError("No address found", 404, "NOT_FOUND");
+    if (!rawAddress || Object.keys(rawAddress).length === 0) {
+        return [];
     }
 
-    const filterData = AddressResponseSchema.parse(rawAddress)
-
-    if (!filterData) {
-        throw new AppError("VALIDATION_ERROR")
-    }
+    const filterData = AddressListResponseSchema.parse(rawAddress)
 
     return filterData;
 }
 
-export async function Update(body: UpdateUserInput) {
+export async function FetchById(id : string) {
     const user = await GetAuthenticatedUser()
 
-    if (!user) {
-        throw new AppError("Unauthorized aceess", 401, "UNAUTHORIZED_ACCESS")
+    const rawAddress = await FetchUserAddressById(id, user.userId);
+
+    if (!rawAddress || Object.keys(rawAddress).length === 0) {
+        return [];
     }
+
+    const filterData = AddressResponseSchema.parse(rawAddress)
+
+    return filterData;
+}
+
+export async function Update(id : string, body: UpdateAddressInputDTO) {
+    const user = await GetAuthenticatedUser()
 
     const activeOrders = await isAnyActiveOrders(user.userId)
 
     if (activeOrders) {
         throw new AppError(
-            "Cannot delete address while you have an active order.",
+            "Cannot update address while you have an active order.",
             400,
             "ACTIVE_ORDER_EXISTS"
         );
     }
 
-    const userAddress = await UpdateUserAddress(body)
+    const userAddress = await UpdateUserAddress(id, user.userId, body)
+
+    if (!userAddress || Object.keys(userAddress).length === 0) {
+        return [];
+    }
 
     return userAddress
 }
 
-export async function Delete(addressId: string) {
+export async function Delete(id: string) {
     const user = await GetAuthenticatedUser()
-
-    if (!user) {
-        throw new AppError("Unauthorized aceess", 401, "UNAUTHORIZED_ACCESS")
-    }
 
     const activeOrders = await isAnyActiveOrders(user.userId)
 
@@ -76,5 +78,5 @@ export async function Delete(addressId: string) {
         );
     }
 
-    await DeleteUserAddress(addressId)
+    await DeleteUserAddress(id, user.userId)
 }
